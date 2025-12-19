@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpotShadow - Baixar Playlist</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div class="sidebar">
+        <div class="brand">
+            <!-- Logo removed as requested -->
+        </div>
+        <nav>
+            <ul>
+                <li class="active"><a href="#"><i class="fa-solid fa-house"></i> Início</a></li>
+                <!-- <li><a href="#"><i class="fa-solid fa-magnifying-glass"></i> Buscar</a></li> -->
+                <li><a href="#" id="reset-nav-btn"><i class="fa-regular fa-square-plus"></i> Baixar Nova Playlist</a>
+                </li>
+            </ul>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="#">Privacidade</a>
+            <a href="#">Cookies</a>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="top-bar">
+            <!-- Navigation arrows just for aesthetic -->
+            <div class="nav-arrows">
+                <button class="nav-btn"><i class="fa-solid fa-chevron-left"></i></button>
+                <button class="nav-btn"><i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+            <div class="user-menu">
+                <button class="upload-btn-header" onclick="document.getElementById('playlist-url').focus()">Colar
+                    Link</button>
+            </div>
+        </div>
+
+        <div class="content-wrapper">
+            <!-- Header Section (Hero) -->
+            <section id="input-section" class="hero-section">
+                <div class="hero-content">
+                    <h1>Baixe suas playlists favoritas</h1>
+                    <p>Cole o link do Spotify, analisamos e baixamos para você na melhor qualidade, sem pastas
+                        bagunçadas.</p>
+
+                    <div class="search-box">
+                        <i class="fa-brands fa-spotify search-icon"></i>
+                        <input type="text" id="playlist-url" placeholder="Cole o link da playlist do Spotify aqui..."
+                            autocomplete="off">
+                        <button id="analyze-btn">Analisar</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Loading Spinner -->
+            <div id="loading" class="hidden loading-container">
+                <div class="spotify-spinner">
+                    <div class="bounce1"></div>
+                    <div class="bounce2"></div>
+                    <div class="bounce3"></div>
+                </div>
+                <p>Analisando playlist...</p>
+            </div>
+
+            <!-- Preview Section -->
+            <section id="preview-section" class="playlist-view hidden">
+                <div class="playlist-header-banner">
+                    <div class="playlist-cover-placeholder">
+                        <i class="fa-solid fa-music"></i>
+                    </div>
+                    <div class="playlist-details">
+                        <span class="playlist-verified">Playlist Verificada</span>
+                        <h2 id="pl-name">Nome da Playlist</h2>
+                        <p id="pl-desc">Playlist pronta para download.</p>
+                        <div class="playlist-meta">
+                            <span class="spotify-green">SpotShadow</span> •
+                            <span id="pl-count">0 músicas</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-bar-sticky">
+                    <button id="download-btn" class="play-btn-round">
+                        <i class="fa-solid fa-download"></i>
+                    </button>
+                    <span class="action-label">Baixar Tudo</span>
+                </div>
+
+                <div class="tracks-list-container">
+                    <div class="tracks-header-row">
+                        <div class="th-num">#</div>
+                        <div class="th-title">Título</div>
+                        <div class="th-album">Álbum</div>
+                        <div class="th-status">Status</div>
+                    </div>
+                    <div id="tracks-body" class="tracks-rows">
+                        <!-- Rows injected via JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Progress Section (Overlay look) -->
+            <section id="progress-section" class="progress-view hidden">
+                <div class="progress-card">
+                    <h3>Baixando sua música...</h3>
+                    <div class="progress-info">
+                        <span id="progress-text">0%</span>
+                        <span id="progress-count">0/0</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="main-progress"></div>
+                    </div>
+                    <div id="current-status" class="status-log">Iniciando...</div>
+                </div>
+            </section>
+
+            <!-- Result Section -->
+            <section id="result-section" class="result-view hidden">
+                <div class="success-card">
+                    <i class="fa-regular fa-circle-check completed-icon"></i>
+                    <h2>Pronto!</h2>
+                    <p>Sua playlist foi baixada com sucesso.</p>
+                    <a id="download-link" href="#" class="btn-spotify-primary large-btn">
+                        <i class="fa-solid fa-file-zipper"></i> Baixar Arquivo ZIP
+                    </a>
+                    <button id="reset-btn" class="btn-spotify-secondary">Baixar Outra</button>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Background gradient overlay for vibe -->
+    <div class="gradient-overlay"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>

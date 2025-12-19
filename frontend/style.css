@@ -1,0 +1,550 @@
+:root {
+    --bg-black: #000000;
+    --bg-dark: #121212;
+    --bg-elevated: #242424;
+    /* Card hover */
+    --bg-highlight: #2a2a2a;
+    --text-primary: #FFFFFF;
+    --text-secondary: #B3B3B3;
+    --primary-green: #1DB954;
+    --primary-green-hover: #1ed760;
+    --error-red: #e91429;
+    --font-family: 'Montserrat', sans-serif;
+    --sidebar-width: 280px;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-family);
+    background-color: var(--bg-black);
+    color: var(--text-primary);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Sidebar */
+.sidebar {
+    width: var(--sidebar-width);
+    background-color: var(--bg-black);
+    display: flex;
+    flex-direction: column;
+    padding: 24px;
+    gap: 24px;
+    z-index: 10;
+}
+
+.brand .logo-img {
+    height: 40px;
+    /* Adjust based on your logo aspect ratio */
+    object-fit: contain;
+}
+
+.sidebar nav ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.sidebar nav ul li a {
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 1rem;
+    transition: color 0.2s;
+}
+
+.sidebar nav ul li:hover a,
+.sidebar nav ul li.active a {
+    color: var(--text-primary);
+}
+
+.sidebar nav ul li i {
+    font-size: 1.5rem;
+}
+
+.sidebar-footer {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sidebar-footer a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.75rem;
+}
+
+/* Main Content */
+.main-content {
+    flex: 1;
+    background: linear-gradient(180deg, #1e1e1e 0%, var(--bg-dark) 100%);
+    margin: 8px 8px 8px 0;
+    border-radius: 8px;
+    overflow-y: auto;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.top-bar {
+    height: 64px;
+    background-color: rgba(0, 0, 0, 0.3);
+    position: sticky;
+    top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    z-index: 20;
+    backdrop-filter: blur(10px);
+}
+
+.nav-arrows {
+    display: flex;
+    gap: 16px;
+}
+
+.nav-btn {
+    background: rgba(0, 0, 0, 0.7);
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    color: white;
+    cursor: default;
+    /* Just aesthetic */
+}
+
+.upload-btn-header {
+    background-color: white;
+    color: black;
+    border: none;
+    padding: 8px 32px;
+    border-radius: 500px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.upload-btn-header:hover {
+    transform: scale(1.05);
+}
+
+/* Content Wrapper */
+.content-wrapper {
+    padding: 24px 32px;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+/* Hero / Input Section */
+.hero-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    text-align: center;
+}
+
+.hero-content h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    line-height: 1.2;
+}
+
+.hero-content p {
+    color: var(--text-secondary);
+    margin-bottom: 40px;
+    font-size: 1.1rem;
+}
+
+.search-box {
+    background: white;
+    border-radius: 500px;
+    display: flex;
+    align-items: center;
+    padding: 8px 8px 8px 24px;
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+    transition: transform 0.2s;
+}
+
+.search-box:focus-within {
+    transform: scale(1.02);
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+}
+
+.search-icon {
+    color: black;
+    font-size: 1.5rem;
+    margin-right: 12px;
+}
+
+.search-box input {
+    border: none;
+    outline: none;
+    flex: 1;
+    font-size: 1rem;
+    font-family: inherit;
+    color: black;
+}
+
+.search-box button {
+    background: var(--primary-green);
+    color: black;
+    border: none;
+    padding: 14px 32px;
+    border-radius: 500px;
+    font-weight: 700;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.9rem;
+    transition: background 0.2s;
+}
+
+.search-box button:hover {
+    background: var(--primary-green-hover);
+}
+
+/* Playlist View */
+.playlist-header-banner {
+    display: flex;
+    align-items: END;
+    gap: 24px;
+    padding-bottom: 24px;
+    margin-top: 20px;
+}
+
+.playlist-cover-placeholder {
+    width: 232px;
+    height: 232px;
+    background: linear-gradient(135deg, #450af5, #c4efd9);
+    box-shadow: 0 4px 60px rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 5rem;
+}
+
+.playlist-details h2 {
+    font-size: 4rem;
+    /* Big title like Spotify */
+    font-weight: 900;
+    margin: 8px 0;
+    line-height: 1;
+}
+
+.playlist-verified {
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.playlist-meta {
+    color: var(--text-secondary);
+    font-weight: 500;
+    margin-top: 12px;
+}
+
+.spotify-green {
+    color: var(--primary-green);
+    font-weight: 700;
+}
+
+.action-bar-sticky {
+    padding: 24px 0;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.play-btn-round {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--primary-green);
+    border: none;
+    color: black;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.play-btn-round:hover {
+    transform: scale(1.05);
+    background: var(--primary-green-hover);
+}
+
+.action-label {
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+/* Tracks List */
+.tracks-header-row {
+    display: grid;
+    grid-template-columns: 50px 4fr 3fr 100px;
+    padding: 0 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    height: 36px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.tracks-rows {
+    display: flex;
+    flex-direction: column;
+}
+
+.track-row {
+    display: grid;
+    grid-template-columns: 50px 4fr 3fr 100px;
+    padding: 8px 16px;
+    border-radius: 4px;
+    align-items: center;
+    transition: background 0.2s;
+}
+
+.track-row:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Track Info Details */
+.t-num {
+    color: var(--text-secondary);
+}
+
+.t-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.t-info img {
+    width: 40px;
+    height: 40px;
+    border-radius: 2px;
+}
+
+.t-text {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.t-title {
+    color: white;
+    font-weight: 500;
+    font-size: 1rem;
+}
+
+.t-artist {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.t-album {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.t-status {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+/* Loading Animation */
+.spotify-spinner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 24px;
+}
+
+.spotify-spinner>div {
+    width: 12px;
+    height: 12px;
+    background-color: var(--primary-green);
+    border-radius: 100%;
+    animation: bounce 1.4s infinite ease-in-out both;
+}
+
+.spotify-spinner .bounce1 {
+    animation-delay: -0.32s;
+}
+
+.spotify-spinner .bounce2 {
+    animation-delay: -0.16s;
+}
+
+@keyframes bounce {
+
+    0%,
+    80%,
+    100% {
+        transform: scale(0);
+    }
+
+    40% {
+        transform: scale(1);
+    }
+}
+
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 50vh;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .sidebar {
+        display: none;
+    }
+
+    .main-content {
+        margin: 0;
+        border-radius: 0;
+    }
+
+    .playlist-header-banner {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .hero-content h1 {
+        font-size: 2rem;
+    }
+
+    .tracks-header-row,
+    .track-row {
+        grid-template-columns: 50px 1fr 80px;
+    }
+
+    .th-album,
+    .t-album {
+        display: none;
+    }
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Progress Card */
+.progress-view,
+.result-view {
+    display: flex;
+    justify-content: center;
+    margin-top: 40px;
+}
+
+.progress-card,
+.success-card {
+    background: #181818;
+    padding: 32px;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 500px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.progress-bar-bg {
+    background: #404040;
+    height: 4px;
+    width: 100%;
+    border-radius: 2px;
+    margin: 16px 0;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: var(--primary-green);
+    width: 0%;
+    transition: width 0.3s;
+}
+
+/* Buttons Spoti Style */
+.btn-spotify-primary {
+    display: inline-block;
+    background: var(--primary-green);
+    color: black;
+    padding: 14px 32px;
+    border-radius: 500px;
+    font-weight: 700;
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 16px;
+    transition: 0.2s;
+}
+
+.btn-spotify-primary:hover {
+    background: var(--primary-green-hover);
+    transform: scale(1.02);
+}
+
+.btn-spotify-secondary {
+    background: transparent;
+    border: 1px solid #727272;
+    color: white;
+    padding: 12px 32px;
+    border-radius: 500px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 16px;
+    cursor: pointer;
+}
+
+.btn-spotify-secondary:hover {
+    border-color: white;
+    transform: scale(1.02);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 12px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
