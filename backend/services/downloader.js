@@ -10,7 +10,6 @@ const youtubeService = require('./youtube');
 const slugify = require('slugify');
 const ffmpegPath = process.env.DOCKER_ENV ? '/usr/bin/ffmpeg' : require('ffmpeg-static');
 
-// Concurrency limit - Reduced to 4 to avoid YouTube 429 Rate Limits
 // Concurrency limit - Restored to safe level to fix YouTube Rate Limits
 const limit = pLimit(Number(process.env.MAX_CONCURRENT_DOWNLOADS) || 5);
 
@@ -69,44 +68,79 @@ async function processDownloadQueue(jobId, tracks, playlistName, io) {
         });
     };
 
-    // Helper: Retry logic is partly handled here by simply reporting error if fails. 
-    // Usually yt-dlp has internal retries. We can add loop if needed.
+    // Concurrency Limits
+    const searchLimit = pLimit(15);
+    const downloadLimit = pLimit(12);
 
-    const tasks = tracks.map((track, index) => limit(async () => {
+    // ==========================================================================================
+    // PHASE 1: SEARCH (No Cookies, High Concurrency)
+    // ==========================================================================================
+
+    console.log(`Phase 1: Searching ${tracks.length} tracks...`);
+    const searchResults = await Promise.all(tracks.map((track) => searchLimit(async () => {
         const trackId = track.id;
-
         try {
-            // Anti-Rate Limit Delay: Random sleep between 1s and 5s
-            const delay = Math.floor(Math.random() * 4000) + 1000;
-            await new Promise(r => setTimeout(r, delay));
-
             emitStatus(trackId, 'Searching...');
 
-            // 1. Search YouTube
+            // Random delay to prevent burst
+            const delay = Math.floor(Math.random() * 2000) + 500;
+            await new Promise(r => setTimeout(r, delay));
+
             const video = await youtubeService.findVideo(track.name, track.artist, track.duration);
 
             if (!video) {
                 throw new Error('Video not found on YouTube');
             }
 
-            const videoUrl = video.webpage_url || video.url; // webpage_url is standard
+            return {
+                track,
+                videoUrl: video.webpage_url || video.url,
+                success: true
+            };
 
-            // 2. Download
+        } catch (err) {
+            console.error(`Search failed for ${track.name}:`, err.message);
+            errors.push({
+                name: track.name,
+                artist: track.artist,
+                error: err.message
+            });
+            emitStatus(trackId, 'Error (Not Found)');
+            return { track, success: false, error: err };
+        }
+    })));
+
+    // ==========================================================================================
+    // PHASE 2: DOWNLOAD (Cookies, Moderate Concurrency, Aria2c)
+    // ==========================================================================================
+
+    console.log(`Phase 2: Downloading found tracks...`);
+
+    // Filter only successful searches
+    const validItems = searchResults.filter(r => r.success);
+    const searchFailures = searchResults.filter(r => !r.success).length;
+    completed += searchFailures; // Mark failed searches as 'completed' (processed)
+    emitProgress();
+
+    const downloadTasks = validItems.map((item) => downloadLimit(async () => {
+        const { track, videoUrl } = item;
+        // Find original index to keep filenames ordered in ZIP
+        const originalIndex = tracks.findIndex(t => t.id === track.id);
+        const trackId = track.id;
+
+        try {
             emitStatus(trackId, 'Downloading...');
 
-            // Normalize filename - CRITICAL FIX: Remove slashes to prevent folder creation
-            // We use a stronger regex to strip ALL slashes and risky chars
+            // Normalize filename - remove slash to prevent folder creation
             const cleanArtist = slugify(track.artist, { remove: /[*+~.()'"!:@/\\\\]/g, lower: false }).replace(/[:/]/g, '-');
             const cleanTrack = slugify(track.name, { remove: /[*+~.()'"!:@/\\\\]/g, lower: false }).replace(/[:/]/g, '-');
-            const filenameObj = `${String(index + 1).padStart(2, '0')} - ${cleanArtist} - ${cleanTrack}.mp3`;
+            const filenameObj = `${String(originalIndex + 1).padStart(2, '0')} - ${cleanArtist} - ${cleanTrack}.mp3`;
             const filePath = path.join(jobDir, filenameObj);
 
-            // Docker structure differs from local structure due to 'COPY backend/ ./'
+            // Docker vs Local path logic
             const cookiesPath = process.env.DOCKER_ENV
                 ? path.resolve(__dirname, '../cookies.txt')
                 : path.resolve(__dirname, '../../cookies.txt');
-
-
 
             const ytOptions = {
                 extractAudio: true,
@@ -115,7 +149,6 @@ async function processDownloadQueue(jobId, tracks, playlistName, io) {
                 output: filePath,
                 noPlaylist: true,
                 ffmpegLocation: ffmpegPath,
-                // userAgent removed to allow yt-dlp to set appropriate UA for the client
                 extractorArgs: "youtube:player_client=ios",
                 // PERFORMANCE OPTIMIZATIONS
                 format: 'bestaudio/best',
@@ -178,7 +211,6 @@ async function processDownloadQueue(jobId, tracks, playlistName, io) {
 
             const success = NodeID3.write(tags, filePath);
             if (!success) {
-                // Try strictly passing filepath as string if write fails, typically standard.
                 console.warn(`Failed to write ID3 tags for ${filePath}`);
             }
 
@@ -199,7 +231,7 @@ async function processDownloadQueue(jobId, tracks, playlistName, io) {
     }));
 
     // Wait for all downloads
-    await Promise.all(tasks);
+    await Promise.all(downloadTasks);
 
     // 4. Create ZIP
     io.emit(`status:${jobId}`, { type: 'zipping' });
@@ -238,15 +270,29 @@ function zipDirectory(sourceDir, outPath, rootName) {
         // Filter: Only zip MP3 and JSON files to exclude .part/.ytdl temp files
         const prefix = rootName ? rootName + '/' : '';
 
-        archive.glob('*.mp3', { cwd: sourceDir, prefix: prefix });
-        archive.glob('*.json', { cwd: sourceDir, prefix: prefix });
+        // Manual file addition to check sizes
+        fs.readdir(sourceDir, (err, files) => {
+            if (err) return reject(err);
+
+            for (const file of files) {
+                const filePath = path.join(sourceDir, file);
+                const stats = fs.statSync(filePath);
+
+                // Only add files > 0 bytes and matching extension
+                if (stats.size > 0 && (file.endsWith('.mp3') || file.endsWith('.json'))) {
+                    archive.file(filePath, { name: prefix + file });
+                } else {
+                    console.warn(`Skipping empty or invalid file: ${file}`);
+                }
+            }
+            archive.finalize();
+        });
 
         archive
             .on('error', err => reject(err))
             .pipe(stream);
 
         stream.on('close', () => resolve());
-        archive.finalize();
     });
 }
 
