@@ -56,16 +56,24 @@ async function searchTrack(track, index, total, io, jobId) {
                 status: 'Searching...'
             });
 
-            const result = await pRetry(
-                () => searchYouTube(track.name, track.artist),
-                {
-                    retries: CONFIG.MAX_RETRIES,
-                    minTimeout: 1000,
-                    onFailedAttempt: (error) => {
-                        console.log(`Search retry ${error.attemptNumber} for: ${track.name}`);
-                    },
-                }
-            );
+            // Try API First
+            let result = null;
+            try {
+                result = await pRetry(
+                    () => searchYouTube(track.name, track.artist),
+                    {
+                        retries: 1, // Fail fast to scraper
+                        minTimeout: 1000,
+                    }
+                );
+            } catch (apiErr) {
+                console.warn(`[${index + 1}/${total}] API Search failed for ${track.name}, trying scraper fallback...`);
+            }
+
+            // Fallback to Scraper if API failed or returned null
+            if (!result) {
+                result = await searchYouTubeScrape(`${track.name} ${track.artist} audio`);
+            }
 
             if (!result) {
                 console.log(`❌ [${index + 1}/${total}] Not found: ${track.name}`);
@@ -77,12 +85,10 @@ async function searchTrack(track, index, total, io, jobId) {
                 return null;
             }
 
-            // console.log(`✅ [${index + 1}/${total}] Found: ${result.title}`);
-
             return {
                 track,
                 videoId: result.videoId,
-                videoUrl: result.url,
+                videoUrl: result.url || `https://www.youtube.com/watch?v=${result.videoId}`,
                 title: result.title,
                 index,
             };
@@ -146,10 +152,6 @@ async function downloadTrack(searchResult, io, jobId, jobDir) {
                             '--socket-timeout', '30',
                             '--retries', '3',
                             '--fragment-retries', '3',
-
-                            // Aria2c for speed
-                            '--external-downloader', 'aria2c',
-                            '--external-downloader-args', 'aria2c:-x 8 -s 8 -k 1M',
 
                             // User-Agent
                             '--user-agent', getRandomUserAgent(),
