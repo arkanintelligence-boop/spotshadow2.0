@@ -6,8 +6,8 @@ services:
     container_name: spotify-downloader
     ports:
       - "3000:3000"
+    env_file:
+      - .env
     environment:
-      - SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID}
-      - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET}
       - HOST=0.0.0.0
     restart: unless-stopped
