@@ -13,7 +13,7 @@ const slugify = require('slugify');
 const archiver = require('archiver');
 
 const CONFIG = {
-    SEARCH_CONCURRENT: 25, // High concurrency for API
+    SEARCH_CONCURRENT: 8, // Lower concurrency for scraper safety
     DOWNLOAD_CONCURRENT: 10,
     MAX_RETRIES: 3,
     DOWNLOAD_DIR: process.env.DOWNLOAD_DIR || path.join(os.tmpdir(), 'spotify-dl'),
@@ -367,6 +367,38 @@ async function processDownloadQueue(jobId, tracks, playlistName, io) {
 function getZipPath(jobId) {
     const p = path.join(CONFIG.DOWNLOAD_DIR, `${jobId}.zip`);
     return fs.existsSync(p) ? p : null;
+}
+
+// Fallback Scraper using yt-dlp directly (No API Key needed)
+async function searchYouTubeScrape(term) {
+    return new Promise((resolve, reject) => {
+        const p = spawn('yt-dlp', [
+            `ytsearch1:${term}`,
+            '--dump-single-json',
+            '--no-warnings',
+            '--no-playlist',
+            '--flat-playlist'
+        ]);
+
+        let stdout = '';
+        p.stdout.on('data', d => stdout += d.toString());
+        p.on('close', code => {
+            if (code !== 0) return resolve(null);
+            try {
+                const data = JSON.parse(stdout);
+                const item = data.entries ? data.entries[0] : data;
+                if (!item) return resolve(null);
+
+                resolve({
+                    videoId: item.id,
+                    url: item.webpage_url || item.url,
+                    title: item.title,
+                });
+            } catch (e) {
+                resolve(null);
+            }
+        });
+    });
 }
 
 module.exports = { processDownloadQueue, getZipPath };
