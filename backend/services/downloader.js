@@ -8,7 +8,7 @@ const axios = require('axios');
 const archiver = require('archiver');
 const youtubeService = require('./youtube');
 const slugify = require('slugify');
-const ffmpegPath = require('ffmpeg-static');
+const ffmpegPath = process.env.DOCKER_ENV ? 'ffmpeg' : require('ffmpeg-static');
 
 // Concurrency limit
 const limit = pLimit(Number(process.env.MAX_CONCURRENT_DOWNLOADS) || 5);
