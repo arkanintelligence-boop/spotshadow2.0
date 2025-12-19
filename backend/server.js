@@ -55,6 +55,11 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: 'Something went wrong!', details: err.message });
 });
 
+const { initCleanup } = require('./services/cleanup');
+
+// Initialize cleanup task
+initCleanup();
+
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
