@@ -1,29 +1,39 @@
 const axios = require('axios');
 
-// Retrieve keys from environment variables
-const YOUTUBE_API_KEYS = [
-    process.env.YOUTUBE_API_KEY_1,
-    process.env.YOUTUBE_API_KEY_2,
-    process.env.YOUTUBE_API_KEY_3,
-    process.env.YOUTUBE_API_KEY_4,
-    process.env.YOUTUBE_API_KEY_5,
-].filter(Boolean); // Filter out undefined/empty keys
+// Retrieve keys from environment variables lazily
+let loadedKeys = null;
+let keyIndex = 0;
+let requestCounts = [];
 
-if (YOUTUBE_API_KEYS.length === 0) {
-    console.warn("WARNING: No YOUTUBE_API_KEYS found in .env. Fallback or errors may occur.");
+function getApiKeys() {
+    if (!loadedKeys) {
+        loadedKeys = [
+            process.env.YOUTUBE_API_KEY_1,
+            process.env.YOUTUBE_API_KEY_2,
+            process.env.YOUTUBE_API_KEY_3,
+            process.env.YOUTUBE_API_KEY_4,
+            process.env.YOUTUBE_API_KEY_5,
+        ].filter(Boolean); // Filter out undefined/empty keys
+
+        if (loadedKeys.length === 0) {
+            console.warn("WARNING: No YOUTUBE_API_KEYS found in .env. Fallback or errors may occur.");
+        }
+
+        // Initialize counts
+        requestCounts = loadedKeys.map(() => 0);
+    }
+    return loadedKeys;
 }
 
-let keyIndex = 0;
-let requestCounts = YOUTUBE_API_KEYS.map(() => 0);
-
 function getNextApiKey() {
-    if (YOUTUBE_API_KEYS.length === 0) {
+    const keys = getApiKeys();
+    if (keys.length === 0) {
         throw new Error("No YouTube API keys configured.");
     }
     // Rotate keys to distribute quota
-    const key = YOUTUBE_API_KEYS[keyIndex];
+    const key = keys[keyIndex];
     requestCounts[keyIndex]++;
-    keyIndex = (keyIndex + 1) % YOUTUBE_API_KEYS.length;
+    keyIndex = (keyIndex + 1) % keys.length;
 
     return key;
 }
