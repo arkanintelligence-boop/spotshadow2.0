@@ -1,4 +1,5 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const ytdlp = require('yt-dlp-exec');
 const { searchYouTube } = require('./youtube-api');
 const pLimit = require('p-limit');

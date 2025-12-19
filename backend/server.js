@@ -1,5 +1,7 @@
 const { initCleanup } = require('./services/cleanup');
-require('dotenv').config();
+const path = require('path');
+// Load .env from root directory (parent of backend)
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 // Run cleanup task
 initCleanup();
