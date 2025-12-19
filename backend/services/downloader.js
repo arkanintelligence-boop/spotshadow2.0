@@ -10,8 +10,8 @@ const youtubeService = require('./youtube');
 const slugify = require('slugify');
 const ffmpegPath = process.env.DOCKER_ENV ? '/usr/bin/ffmpeg' : require('ffmpeg-static');
 
-// Concurrency limit
-const limit = pLimit(Number(process.env.MAX_CONCURRENT_DOWNLOADS) || 5);
+// Concurrency limit - Increased to speed up downloads
+const limit = pLimit(Number(process.env.MAX_CONCURRENT_DOWNLOADS) || 10);
 
 // Temp dir logic: use system temp or specific path
 let TEMP_DIR = process.env.TEMP_DIR || path.join(os.tmpdir(), 'spotify-dl');
@@ -103,7 +103,6 @@ async function processDownloadQueue(jobId, tracks, playlistName, io) {
 
             console.log(`[Downloader] Looking for cookies at: ${cookiesPath} (Exists: ${fs.existsSync(cookiesPath)})`);
 
-            // yt-dlp args
             const ytOptions = {
                 extractAudio: true,
                 audioFormat: 'mp3',
@@ -111,7 +110,10 @@ async function processDownloadQueue(jobId, tracks, playlistName, io) {
                 output: filePath,
                 noPlaylist: true,
                 ffmpegLocation: ffmpegPath,
-                userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                // Optimizations
+                format: 'bestaudio/best',
+                concurrentFragments: 4
             };
 
             if (fs.existsSync(cookiesPath)) {
