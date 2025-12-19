@@ -11,7 +11,8 @@ const slugify = require('slugify');
 const ffmpegPath = process.env.DOCKER_ENV ? '/usr/bin/ffmpeg' : require('ffmpeg-static');
 
 // Concurrency limit - Reduced to 4 to avoid YouTube 429 Rate Limits
-const limit = pLimit(Number(process.env.MAX_CONCURRENT_DOWNLOADS) || 4);
+// Concurrency limit - Increased for performance
+const limit = pLimit(Number(process.env.MAX_CONCURRENT_DOWNLOADS) || 20);
 
 // Temp dir logic: use system temp or specific path
 let TEMP_DIR = process.env.TEMP_DIR || path.join(os.tmpdir(), 'spotify-dl');
@@ -112,9 +113,21 @@ async function processDownloadQueue(jobId, tracks, playlistName, io) {
                 ffmpegLocation: ffmpegPath,
                 // userAgent removed to allow yt-dlp to set appropriate UA for the client
                 extractorArgs: "youtube:player_client=ios",
-                // Optimizations
+                // PERFORMANCE OPTIMIZATIONS
                 format: 'bestaudio/best',
-                concurrentFragments: 4
+                noCheckCertificates: true,
+                noWarnings: true,
+                preferFreeFormats: true,
+                youtubeSkipDashManifest: true,
+
+                // ARIA2C CONFIGURATION
+                externalDownloader: 'aria2c',
+                externalDownloaderArgs: ['-x', '16', '-s', '16', '-k', '1M'],
+
+                // Network tuning
+                socketTimeout: 30,
+                retries: 3,
+                fragmentRetries: 3
             };
 
             if (fs.existsSync(cookiesPath)) {
