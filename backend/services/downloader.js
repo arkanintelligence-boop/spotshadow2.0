@@ -10,8 +10,8 @@ const youtubeService = require('./youtube');
 const slugify = require('slugify');
 const ffmpegPath = process.env.DOCKER_ENV ? '/usr/bin/ffmpeg' : require('ffmpeg-static');
 
-// Concurrency limit - Increased to speed up downloads
-const limit = pLimit(Number(process.env.MAX_CONCURRENT_DOWNLOADS) || 10);
+// Concurrency limit - Reduced to 4 to avoid YouTube 429 Rate Limits
+const limit = pLimit(Number(process.env.MAX_CONCURRENT_DOWNLOADS) || 4);
 
 // Temp dir logic: use system temp or specific path
 let TEMP_DIR = process.env.TEMP_DIR || path.join(os.tmpdir(), 'spotify-dl');
