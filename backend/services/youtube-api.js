@@ -1,4 +1,3 @@
-```javascript
 const axios = require('axios');
 
 // Retrieve keys from environment variables
@@ -26,65 +25,58 @@ function getNextApiKey() {
     requestCounts[keyIndex]++;
     keyIndex = (keyIndex + 1) % YOUTUBE_API_KEYS.length;
 
-    // console.log(`Using API key ${ keyIndex + 1 }, requests: ${ requestCounts[keyIndex] } `);
-
     return key;
 }
 
 async function searchYouTube(trackName, artist) {
     try {
         const apiKey = getNextApiKey();
-        const query = encodeURIComponent(`${ trackName } ${ artist } official audio`);
+        const query = encodeURIComponent(`${trackName} ${artist} official audio`);
 
         const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${query}&type=video&maxResults=5&key=${apiKey}`;
 
-const response = await axios.get(url, {
-    headers: {
-        'Accept': 'application/json',
-    },
-    timeout: 10000,
-});
+        const response = await axios.get(url, {
+            headers: {
+                'Accept': 'application/json',
+            },
+            timeout: 10000,
+        });
 
-const data = response.data;
+        const data = response.data;
 
-if (!data.items || data.items.length === 0) {
-    return null; // Not found
-}
+        if (!data.items || data.items.length === 0) {
+            return null; // Not found
+        }
 
-// Get video details (duration) for better matching
-const videoIds = data.items.map(item => item.id.videoId).join(',');
-const videoDetails = await getVideoDetails(videoIds);
+        // Get video details (duration) for better matching
+        const videoIds = data.items.map(item => item.id.videoId).join(',');
+        const videoDetails = await getVideoDetails(videoIds);
 
-// Find best match
-const bestMatch = findBestMatch(data.items, videoDetails, trackName, artist);
+        // Find best match
+        const bestMatch = findBestMatch(data.items, videoDetails, trackName, artist);
 
-if (!bestMatch) return null;
+        if (!bestMatch) return null;
 
-return {
-    videoId: bestMatch.id.videoId,
-    url: `https://www.youtube.com/watch?v=${bestMatch.id.videoId}`,
-    title: bestMatch.snippet.title,
-    channelTitle: bestMatch.snippet.channelTitle,
-    duration: bestMatch.duration,
-};
+        return {
+            videoId: bestMatch.id.videoId,
+            url: `https://www.youtube.com/watch?v=${bestMatch.id.videoId}`,
+            title: bestMatch.snippet.title,
+            channelTitle: bestMatch.snippet.channelTitle,
+            duration: bestMatch.duration,
+        };
 
     } catch (error) {
-    if (error.response && error.response.status === 403) {
-        const data = error.response.data;
-        // Check for quota error specifically
-        if (data.error && data.error.message && (data.error.message.includes('quota') || data.error.message.includes('Limit Exceeded'))) {
-            console.error(`⚠️ API key quota exceeded! Rotating...`);
-            // Try next key recursively (be careful of infinite loop if all quotas full)
-            // Ideally we should track failed keys to stop recursion
-            // simple safety: if we rotated through all keys, fail.
-            // For now, let's just throw so retry logic handles it or next call uses next key.
-            throw new Error("Quota Exceeded");
+        if (error.response && error.response.status === 403) {
+            const data = error.response.data;
+            // Check for quota error specifically
+            if (data.error && data.error.message && (data.error.message.includes('quota') || data.error.message.includes('Limit Exceeded'))) {
+                console.error(`⚠️ API key quota exceeded! Rotating...`);
+                throw new Error("Quota Exceeded");
+            }
         }
+        console.error(`YouTube API search error for ${trackName}:`, error.message);
+        throw error;
     }
-    console.error(`YouTube API search error for ${trackName}:`, error.message);
-    // If quota exceeded, we might want to propagate that specific error
-    throw error;
-}
 }
 
 async function getVideoDetails(videoIds) {
@@ -169,4 +161,3 @@ function findBestMatch(items, videoDetails, trackName, artist) {
 }
 
 module.exports = { searchYouTube };
-```
