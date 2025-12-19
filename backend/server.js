@@ -1,3 +1,4 @@
+require('./check-env');
 const { initCleanup } = require('./services/cleanup');
 const path = require('path');
 // Load .env from root directory (parent of backend)
