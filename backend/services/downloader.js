@@ -6,7 +6,6 @@ const pLimit = require('p-limit');
 const pRetry = require('p-retry');
 const { spawn } = require('child_process');
 const fs = require('fs');
-const path = require('path');
 const os = require('os');
 const axios = require('axios');
 const NodeID3 = require('node-id3');
