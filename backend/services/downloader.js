@@ -1,8 +1,7 @@
+require('dotenv').config();
 const ytdlp = require('yt-dlp-exec');
 const { searchYouTube } = require('./youtube-api');
 const pLimit = require('p-limit');
-// p-retry should be imported with dynamic import if it's ESM only, but v5 is usually compatible or we use dynamic import.
-// Let's use standard require for now, if it fails we fix. It seems previous version used require.
 const pRetry = require('p-retry');
 const { spawn } = require('child_process');
 const fs = require('fs');
@@ -12,9 +11,6 @@ const axios = require('axios');
 const NodeID3 = require('node-id3');
 const slugify = require('slugify');
 const archiver = require('archiver');
-
-// Import environment variables if not already loaded (usually loaded in server.js)
-require('dotenv').config();
 
 const CONFIG = {
     SEARCH_CONCURRENT: 25, // High concurrency for API
@@ -316,13 +312,6 @@ async function processDownloadQueue(jobId, tracks, playlistName, io) {
 
     // Phase 2: Download
     console.log('Phase 2: Downloading audio files...');
-
-    // Update progress to reflect that searches are done, now downloading.
-    // Actually, let's keep progress simple: each step counts? 
-    // Standard logic: search is fast, download is slow. Let's base progress on download completion mostly?
-    // Or stick to 1 track = 1 unit of work (Search + Download).
-    // Current logic in `downloadTrack` emits updates. 
-    // We need to handle `completed` increment in download phase.
 
     // Mark failed searches as 'completed' for progress bar
     completed = tracks.length - searchResults.length;
