@@ -16,7 +16,14 @@ function getApiKeys() {
         ].filter(Boolean); // Filter out undefined/empty keys
 
         if (loadedKeys.length === 0) {
-            console.warn("WARNING: No YOUTUBE_API_KEYS found in .env. Fallback or errors may occur.");
+            console.warn("WARNING: No YOUTUBE_API_KEYS found in .env. Using embedded fallback keys.");
+            loadedKeys = [
+                "AIzaSyDjmjWdjfT3unCAJ7RxwuHLtnlVVFYEiHM",
+                "AIzaSyB4WT4w_F9dQ703DJeKt7M-_R5uvvE_kYI",
+                "AIzaSyCM9Mtgzub9xQ5DzBwhcM6F8YijzY2WQ_k",
+                "AIzaSyAE36ODCfgJHOLHTKU94vU_rsbhQ0NBDaE",
+                "AIzaSyB7aZ7-ma-gOceFOCvHskQ9ymHSiW1AwSE"
+            ];
         }
 
         // Initialize counts
