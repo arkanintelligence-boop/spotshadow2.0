@@ -6,12 +6,16 @@ const ytDlp = require('yt-dlp-exec');
 const NodeID3 = require('node-id3');
 const axios = require('axios');
 const archiver = require('archiver');
-const youtubeService = require('./youtube');
+const { searchInvidious } = require('./invidious');
 const slugify = require('slugify');
 const ffmpegPath = process.env.DOCKER_ENV ? '/usr/bin/ffmpeg' : require('ffmpeg-static');
 
-// Concurrency limit - Restored to safe level to fix YouTube Rate Limits
-const limit = pLimit(Number(process.env.MAX_CONCURRENT_DOWNLOADS) || 5);
+// Configuration
+const CONFIG = {
+    SEARCH_CONCURRENT: 20,
+    DOWNLOAD_CONCURRENT: 10,
+    MAX_RETRIES: 3,
+};
 
 // Temp dir logic: use system temp or specific path
 let TEMP_DIR = process.env.TEMP_DIR || path.join(os.tmpdir(), 'spotify-dl');
@@ -36,6 +40,16 @@ async function downloadCover(url) {
         console.warn("Could not download cover image:", e.message);
         return null;
     }
+}
+
+const USER_AGENTS = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36',
+];
+
+function getRandomUserAgent() {
+    return USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
 }
 
 async function processDownloadQueue(jobId, tracks, playlistName, io) {
@@ -68,33 +82,36 @@ async function processDownloadQueue(jobId, tracks, playlistName, io) {
         });
     };
 
-    // Concurrency Limits
-    const searchLimit = pLimit(15);
-    const downloadLimit = pLimit(12);
+    // Limiters
+    const searchLimiter = pLimit(CONFIG.SEARCH_CONCURRENT);
+    const downloadLimiter = pLimit(CONFIG.DOWNLOAD_CONCURRENT);
 
     // ==========================================================================================
-    // PHASE 1: SEARCH (No Cookies, High Concurrency)
+    // PHASE 1: SEARCH (Invidious API - No Rate Limit)
     // ==========================================================================================
 
-    console.log(`Phase 1: Searching ${tracks.length} tracks...`);
-    const searchResults = await Promise.all(tracks.map((track) => searchLimit(async () => {
+    console.log(`Phase 1: Searching ${tracks.length} tracks via Invidious...`);
+
+    const searchPromises = tracks.map((track, index) => searchLimiter(async () => {
         const trackId = track.id;
         try {
             emitStatus(trackId, 'Searching...');
 
-            // Random delay to prevent burst
-            const delay = Math.floor(Math.random() * 2000) + 500;
-            await new Promise(r => setTimeout(r, delay));
+            // Random small delay just to be safe
+            await new Promise(r => setTimeout(r, Math.random() * 500));
 
-            const video = await youtubeService.findVideo(track.name, track.artist, track.duration);
+            const result = await searchInvidious(track.name, track.artist);
 
-            if (!video) {
-                throw new Error('Video not found on YouTube');
+            if (!result) {
+                throw new Error('Video not found on YouTube (Invidious)');
             }
 
             return {
                 track,
-                videoUrl: video.webpage_url || video.url,
+                videoUrl: result.url,
+                videoId: result.videoId,
+                title: result.title,
+                originalIndex: index,
                 success: true
             };
 
@@ -108,80 +125,71 @@ async function processDownloadQueue(jobId, tracks, playlistName, io) {
             emitStatus(trackId, 'Error (Not Found)');
             return { track, success: false, error: err };
         }
-    })));
+    }));
+
+    const searchResultsRaw = await Promise.all(searchPromises);
 
     // ==========================================================================================
-    // PHASE 2: DOWNLOAD (Cookies, Moderate Concurrency, Aria2c)
+    // PHASE 2: DOWNLOAD (Direct URL via yt-dlp + Aria2c)
     // ==========================================================================================
 
     console.log(`Phase 2: Downloading found tracks...`);
 
     // Filter only successful searches
-    const validItems = searchResults.filter(r => r.success);
-    const searchFailures = searchResults.filter(r => !r.success).length;
-    completed += searchFailures; // Mark failed searches as 'completed' (processed)
+    const validItems = searchResultsRaw.filter(r => r.success);
+    const searchFailures = searchResultsRaw.filter(r => !r.success).length;
+    completed += searchFailures; // Mark failed searches as 'processed'
     emitProgress();
 
-    const downloadTasks = validItems.map((item) => downloadLimit(async () => {
-        const { track, videoUrl } = item;
-        // Find original index to keep filenames ordered in ZIP
-        const originalIndex = tracks.findIndex(t => t.id === track.id);
+    const downloadTasks = validItems.map((item) => downloadLimiter(async () => {
+        const { track, videoUrl, originalIndex } = item;
         const trackId = track.id;
 
         try {
             emitStatus(trackId, 'Downloading...');
 
-            // Normalize filename - remove slash to prevent folder creation
+            // Normalize filename
             const cleanArtist = slugify(track.artist, { remove: /[*+~.()'"!:@/\\\\]/g, lower: false }).replace(/[:/]/g, '-');
             const cleanTrack = slugify(track.name, { remove: /[*+~.()'"!:@/\\\\]/g, lower: false }).replace(/[:/]/g, '-');
             const filenameObj = `${String(originalIndex + 1).padStart(2, '0')} - ${cleanArtist} - ${cleanTrack}.mp3`;
             const filePath = path.join(jobDir, filenameObj);
 
-            // Docker vs Local path logic
-            const cookiesPath = process.env.DOCKER_ENV
-                ? path.resolve(__dirname, '../cookies.txt')
-                : path.resolve(__dirname, '../../cookies.txt');
-
             const ytOptions = {
+                output: filePath,
                 extractAudio: true,
                 audioFormat: 'mp3',
-                audioQuality: 0,
-                output: filePath,
+                audioQuality: '0',
                 noPlaylist: true,
                 ffmpegLocation: ffmpegPath,
-                extractorArgs: "youtube:player_client=ios",
-                // PERFORMANCE OPTIMIZATIONS
-                format: 'bestaudio/best',
+
+                // Configurações anti-rate-limit
                 noCheckCertificates: true,
                 noWarnings: true,
                 preferFreeFormats: true,
-                youtubeSkipDashManifest: true,
-
-                // ARIA2C CONFIGURATION
-                externalDownloader: 'aria2c',
-                externalDownloaderArgs: ['-x', '16', '-s', '16', '-k', '1M'],
-
-                // Network tuning
-                socketTimeout: 30,
+                socketTimeout: 60,
                 retries: 3,
-                fragmentRetries: 3
+                fragmentRetries: 3,
+
+                // IMPORTANTE: Usar aria2c se disponível
+                externalDownloader: 'aria2c',
+                externalDownloaderArgs: [
+                    '-x', '8',
+                    '-s', '8',
+                    '-k', '1M',
+                ],
+
+                // User-Agent aleatório
+                userAgent: getRandomUserAgent(),
+
+                // CRÍTICO: NÃO usar cookies aqui também
+                // (yt-dlp baixa direto a URL, não precisa de cookies se for video publico)
             };
 
-            if (fs.existsSync(cookiesPath)) {
-                ytOptions.cookies = cookiesPath;
-            }
-
-            // yt-dlp execution with retry logic (Cookie fallback)
+            // yt-dlp execution
             try {
                 await ytDlp(videoUrl, ytOptions);
             } catch (dlErr) {
-                console.warn(`Download failed with cookies for ${track.name}, retrying without cookies...`);
-                if (ytOptions.cookies) {
-                    delete ytOptions.cookies;
-                    await ytDlp(videoUrl, ytOptions);
-                } else {
-                    throw dlErr;
-                }
+                throw dlErr;
             }
 
             // 3. Metadata Tagging
@@ -267,7 +275,7 @@ function zipDirectory(sourceDir, outPath, rootName) {
     const stream = fs.createWriteStream(outPath);
 
     return new Promise((resolve, reject) => {
-        // Filter: Only zip MP3 and JSON files to exclude .part/.ytdl temp files
+        // Filter: Only zip MP3 and JSON files
         const prefix = rootName ? rootName + '/' : '';
 
         // Manual file addition to check sizes
