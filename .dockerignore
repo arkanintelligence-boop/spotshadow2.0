@@ -1,6 +1,5 @@
 node_modules
 .git
-.env
 .DS_Store
 backend/node_modules
 frontend/node_modules
