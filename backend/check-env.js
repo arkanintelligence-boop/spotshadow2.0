@@ -45,8 +45,9 @@ console.log(`Loaded ${keys.length} YouTube API Keys.`);
 
 if (keys.length === 0) {
     console.error('❌ CRITICAL: No YouTube API keys found in environment variables.');
-    console.error('Please check your .env file and ensure YOUTUBE_API_KEY_1 is set.');
-    console.log('Current Env Vars (Keys only):', Object.keys(process.env).filter(k => k.includes('YOUTUBE')));
+    console.error('Please check your .env file and ensure YOUTUBE_API_KEY_1 is set and NOT commented out.');
+    console.log('PORT Check:', process.env.PORT);
+    console.log('All Env Keys:', Object.keys(process.env).sort());
     process.exit(1);
 } else {
     console.log('✅ YouTube keys detected correctly.');
