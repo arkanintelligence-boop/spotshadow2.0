@@ -164,7 +164,10 @@ async function downloadTrack(searchResult, io, jobId, jobDir) {
 
                         const ytdlpProcess = spawn('yt-dlp', args);
 
-                        let stderr = '';
+                        ytdlpProcess.stdout.on('data', (data) => {
+                            console.log(`[yt-dlp info] ${data.toString()}`);
+                        });
+
                         ytdlpProcess.stderr.on('data', (data) => {
                             stderr += data.toString();
                             console.log(`[yt-dlp error] ${data.toString()}`);
