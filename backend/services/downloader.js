@@ -207,8 +207,13 @@ function zipDirectory(sourceDir, outPath, rootName) {
     const stream = fs.createWriteStream(outPath);
 
     return new Promise((resolve, reject) => {
+        // Filter: Only zip MP3 and JSON files to exclude .part/.ytdl temp files
+        const prefix = rootName ? rootName + '/' : '';
+
+        archive.glob('*.mp3', { cwd: sourceDir, prefix: prefix });
+        archive.glob('*.json', { cwd: sourceDir, prefix: prefix });
+
         archive
-            .directory(sourceDir, rootName || false) // put files inside a folder matching playlist name? Prompt suggests "Nome_da_Playlist/" structure.
             .on('error', err => reject(err))
             .pipe(stream);
 
