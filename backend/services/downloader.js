@@ -96,8 +96,14 @@ async function processDownloadQueue(jobId, tracks, playlistName, io) {
             const filenameObj = `${String(index + 1).padStart(2, '0')} - ${cleanArtist} - ${cleanTrack}.mp3`;
             const filePath = path.join(jobDir, filenameObj);
 
+            // Docker structure differs from local structure due to 'COPY backend/ ./'
+            const cookiesPath = process.env.DOCKER_ENV
+                ? path.resolve(__dirname, '../cookies.txt')
+                : path.resolve(__dirname, '../../cookies.txt');
+
+            console.log(`[Downloader] Looking for cookies at: ${cookiesPath} (Exists: ${fs.existsSync(cookiesPath)})`);
+
             // yt-dlp args
-            const cookiesPath = path.resolve(__dirname, '../../cookies.txt');
             const ytOptions = {
                 extractAudio: true,
                 audioFormat: 'mp3',

@@ -13,7 +13,12 @@ async function findVideo(track, artist, durationMs) {
         // We use full dump to get duration and titles
         const fs = require('fs');
         const path = require('path');
-        const cookiesPath = path.resolve(__dirname, '../../cookies.txt');
+        // Docker structure differs from local structure due to 'COPY backend/ ./'
+        const cookiesPath = process.env.DOCKER_ENV
+            ? path.resolve(__dirname, '../cookies.txt')
+            : path.resolve(__dirname, '../../cookies.txt');
+
+        console.log(`[YouTube Search] Looking for cookies at: ${cookiesPath} (Exists: ${fs.existsSync(cookiesPath)})`);
 
         const options = {
             dumpSingleJson: true,
