@@ -11,11 +11,22 @@ async function findVideo(track, artist, durationMs) {
     try {
         // Search for top 5 results
         // We use full dump to get duration and titles
-        const output = await ytDlp(`ytsearch5:${query}`, {
+        const fs = require('fs');
+        const path = require('path');
+        const cookiesPath = path.resolve(__dirname, '../../cookies.txt');
+
+        const options = {
             dumpSingleJson: true,
             noWarnings: true,
-            flatPlaylist: false // We need details like duration
-        });
+            flatPlaylist: false,
+            userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        };
+
+        if (fs.existsSync(cookiesPath)) {
+            options.cookies = cookiesPath;
+        }
+
+        const output = await ytDlp(`ytsearch5:${query}`, options);
 
         const entries = output.entries || [];
         if (entries.length === 0) return null;

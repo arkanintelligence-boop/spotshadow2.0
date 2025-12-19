@@ -97,14 +97,23 @@ async function processDownloadQueue(jobId, tracks, playlistName, io) {
             const filePath = path.join(jobDir, filenameObj);
 
             // yt-dlp args
-            await ytDlp(videoUrl, {
+            const cookiesPath = path.resolve(__dirname, '../../cookies.txt');
+            const ytOptions = {
                 extractAudio: true,
                 audioFormat: 'mp3',
                 audioQuality: 0,
                 output: filePath,
                 noPlaylist: true,
-                ffmpegLocation: ffmpegPath // Force use of static ffmpeg for WEBM -> MP3 conversion
-            });
+                ffmpegLocation: ffmpegPath,
+                userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            };
+
+            if (fs.existsSync(cookiesPath)) {
+                ytOptions.cookies = cookiesPath;
+            }
+
+            // yt-dlp args
+            await ytDlp(videoUrl, ytOptions);
 
             // 3. Metadata Tagging
             emitStatus(trackId, 'Tagging...');
