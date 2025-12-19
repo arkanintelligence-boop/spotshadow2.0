@@ -1,4 +1,11 @@
 require('dotenv').config();
+console.log('Starting server...');
+console.log('Environment:', {
+    NODE_ENV: process.env.NODE_ENV,
+    PORT: process.env.PORT,
+    DOCKER: process.env.DOCKER_ENV
+});
+
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');

@@ -22,13 +22,13 @@ COPY backend/ ./
 COPY frontend/ ./public
 
 # Environment variables defaults
-ENV PORT=3000
+ENV PORT=80
 ENV TEMP_DIR=/tmp/downloads
 ENV DOCKER_ENV=true
 
 # Create temp directory
 RUN mkdir -p /tmp/downloads
 
-EXPOSE 3000
+EXPOSE 80
 
 CMD ["node", "server.js"]
