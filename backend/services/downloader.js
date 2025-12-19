@@ -110,7 +110,8 @@ async function processDownloadQueue(jobId, tracks, playlistName, io) {
                 output: filePath,
                 noPlaylist: true,
                 ffmpegLocation: ffmpegPath,
-                userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                // userAgent removed to allow yt-dlp to set appropriate UA for the client
+                extractorArgs: "youtube:player_client=ios",
                 // Optimizations
                 format: 'bestaudio/best',
                 concurrentFragments: 4
@@ -120,8 +121,18 @@ async function processDownloadQueue(jobId, tracks, playlistName, io) {
                 ytOptions.cookies = cookiesPath;
             }
 
-            // yt-dlp args
-            await ytDlp(videoUrl, ytOptions);
+            // yt-dlp execution with retry logic (Cookie fallback)
+            try {
+                await ytDlp(videoUrl, ytOptions);
+            } catch (dlErr) {
+                console.warn(`Download failed with cookies for ${track.name}, retrying without cookies...`);
+                if (ytOptions.cookies) {
+                    delete ytOptions.cookies;
+                    await ytDlp(videoUrl, ytOptions);
+                } else {
+                    throw dlErr;
+                }
+            }
 
             // 3. Metadata Tagging
             emitStatus(trackId, 'Tagging...');
