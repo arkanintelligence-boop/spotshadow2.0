@@ -11,8 +11,8 @@ const slugify = require('slugify');
 const ffmpegPath = process.env.DOCKER_ENV ? '/usr/bin/ffmpeg' : require('ffmpeg-static');
 
 // Concurrency limit - Reduced to 4 to avoid YouTube 429 Rate Limits
-// Concurrency limit - Increased for performance
-const limit = pLimit(Number(process.env.MAX_CONCURRENT_DOWNLOADS) || 20);
+// Concurrency limit - Restored to safe level to fix YouTube Rate Limits
+const limit = pLimit(Number(process.env.MAX_CONCURRENT_DOWNLOADS) || 5);
 
 // Temp dir logic: use system temp or specific path
 let TEMP_DIR = process.env.TEMP_DIR || path.join(os.tmpdir(), 'spotify-dl');
@@ -76,6 +76,10 @@ async function processDownloadQueue(jobId, tracks, playlistName, io) {
         const trackId = track.id;
 
         try {
+            // Anti-Rate Limit Delay: Random sleep between 1s and 5s
+            const delay = Math.floor(Math.random() * 4000) + 1000;
+            await new Promise(r => setTimeout(r, delay));
+
             emitStatus(trackId, 'Searching...');
 
             // 1. Search YouTube

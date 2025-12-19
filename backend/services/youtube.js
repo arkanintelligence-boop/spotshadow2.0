@@ -24,12 +24,15 @@ async function findVideo(track, artist, durationMs) {
             dumpSingleJson: true,
             noWarnings: true,
             flatPlaylist: false,
-            userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            // Use iOS client for search to avoid signature/rate issues
+            extractorArgs: "youtube:player_client=ios"
         };
 
-        if (fs.existsSync(cookiesPath)) {
-            options.cookies = cookiesPath;
-        }
+        // For SEARCH, we avoid using cookies to prevent 'Account Rate Limited' errors.
+        // Search allows public access.
+        // if (fs.existsSync(cookiesPath)) {
+        //    options.cookies = cookiesPath;
+        // }
 
         const output = await ytDlp(`ytsearch5:${query}`, options);
 
