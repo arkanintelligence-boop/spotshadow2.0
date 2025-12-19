@@ -1,4 +1,11 @@
+const { initCleanup } = require('./services/cleanup');
 require('dotenv').config();
+
+// Visual Log Clear
+console.log('\n'.repeat(20));
+console.log('=================================================');
+console.log('       SPOTSHADOW SERVER STARTING                ');
+console.log('=================================================');
 console.log('Starting server...');
 console.log('Environment:', {
     NODE_ENV: process.env.NODE_ENV,

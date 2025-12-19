@@ -18,7 +18,7 @@ async function findVideo(track, artist, durationMs) {
             ? path.resolve(__dirname, '../cookies.txt')
             : path.resolve(__dirname, '../../cookies.txt');
 
-        console.log(`[YouTube Search] Looking for cookies at: ${cookiesPath} (Exists: ${fs.existsSync(cookiesPath)})`);
+
 
         const options = {
             dumpSingleJson: true,
