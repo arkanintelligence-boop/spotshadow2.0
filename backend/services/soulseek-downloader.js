@@ -68,7 +68,7 @@ async function downloadPlaylistSoulseek(spotifyUrl, io, jobId) {
 
         // Executar sldl
         // sldl [url] -c config -p outputDir
-        const sldl = spawn('sldl', [
+        const sldl = spawn('/usr/local/bin/sldl', [
             spotifyUrl,
             '-c', CONFIG.CONFIG_FILE,
             '-p', outputDir,
