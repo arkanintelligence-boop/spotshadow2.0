@@ -1,42 +1,38 @@
-FROM node:18-alpine
+FROM python:3.11-slim
 
-# Install Python3, pip, and ffmpeg
-# yt-dlp requires python
-RUN apk add --no-cache python3 py3-pip ffmpeg aria2 wget unzip icu-libs libstdc++ libgcc bash gcompat libc6-compat
+# Install system dependencies and Node.js
+RUN apt-get update && apt-get install -y \
+    ffmpeg \
+    curl \
+    gnupg \
+    && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install yt-dlp
-RUN pip3 install yt-dlp --break-system-packages
+# Install spotDL
+RUN pip install --no-cache-dir spotdl
 
-# Install sldl (Soulseek Downloader)
-RUN wget -L https://github.com/fiso64/slsk-batchdl/releases/latest/download/sldl_linux-x64.zip && \
-    unzip sldl_linux-x64.zip -d /tmp/sldl_extracted && \
-    mv /tmp/sldl_extracted/sldl /usr/local/bin/ || mv /tmp/sldl_extracted/*/sldl /usr/local/bin/ && \
-    chmod +x /usr/local/bin/sldl && \
-    rm -rf sldl_linux-x64.zip /tmp/sldl_extracted
+# Verify spotdl installation
+RUN spotdl --version
 
 WORKDIR /app
 
-# Copy package files from backend
-COPY package*.json ./
-COPY cookies.txt ./
-
 # Install backend dependencies
-RUN npm install --production
+COPY backend/package*.json ./
+RUN npm ci --only=production
 
-# Copy backend source code
+# Copy backend source
 COPY backend/ ./
 
-# Copy frontend code to be served by the backend
+# Copy frontend to public
 COPY frontend/ ./public
 
-# Environment variables defaults
-ENV PORT=80
-ENV TEMP_DIR=/tmp/downloads
-ENV DOCKER_ENV=true
-
 # Create temp directory
-RUN mkdir -p /tmp/downloads
+RUN mkdir -p /tmp/downloads && chmod 777 /tmp/downloads
 
-EXPOSE 80
+ENV NODE_ENV=production \
+    PORT=3000
+
+EXPOSE 3000
 
 CMD ["node", "server.js"]
