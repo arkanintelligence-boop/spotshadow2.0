@@ -7,12 +7,7 @@ const execPromise = util.promisify(exec);
 
 const CONFIG = {
     DOWNLOAD_DIR: process.env.TEMP_DIR || '/tmp/downloads',
-    DOWNLOAD_DIR: process.env.TEMP_DIR || '/tmp/downloads',
-    SOULSEEK_USER: process.env.SOULSEEK_USER || 'Leozin@12345',
-    SOULSEEK_PASS: process.env.SOULSEEK_PASS || 'Leozin@12345',
     CONFIG_FILE: '/tmp/sldl.conf',
-};
-CONFIG_FILE: '/tmp/sldl.conf',
 };
 
 // Criar arquivo de configuração do sldl
