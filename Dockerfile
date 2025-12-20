@@ -2,7 +2,7 @@ FROM node:18-alpine
 
 # Install Python3, pip, and ffmpeg
 # yt-dlp requires python
-RUN apk add --no-cache python3 py3-pip ffmpeg aria2
+RUN apk add --no-cache python3 py3-pip ffmpeg aria2 wget unzip icu-libs libstdc++ libgcc bash gcompat libc6-compat
 
 # Install yt-dlp
 RUN pip3 install yt-dlp --break-system-packages
