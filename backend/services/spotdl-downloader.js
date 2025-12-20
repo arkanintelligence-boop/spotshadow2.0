@@ -39,7 +39,7 @@ async function downloadPlaylistSpotdl(spotifyUrl, jobId, onProgress) {
         // Capturar output
         spotdl.stdout.on('data', (data) => {
             const output = data.toString();
-            // console.log(output);
+            console.log(`[spotDL] ${output}`);
 
             // Detectar total
             // Found X songs in ...
@@ -91,10 +91,7 @@ async function downloadPlaylistSpotdl(spotifyUrl, jobId, onProgress) {
 
         spotdl.stderr.on('data', (data) => {
             const error = data.toString();
-            // console.error('spotDL stderr:', error);
-            if (!error.includes('WARNING') && !error.includes('FFmpeg')) {
-                // console.error(error);
-            }
+            console.error(`[spotDL stderr] ${error}`);
         });
 
         spotdl.on('close', (code) => {
