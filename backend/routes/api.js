@@ -41,8 +41,10 @@ router.post('/download', async (req, res) => {
         // Start processing in background
         const io = req.app.get('socketio');
 
-        // Check for Soulseek credentials
-        const useSoulseek = process.env.SOULSEEK_USER && process.env.SOULSEEK_PASS && playlistUrl;
+        // Check for Soulseek credentials (env or hardcoded fallback check)
+        // Since we hardcoded them in the service, we can assume true if URL exists, but let's be explicit
+        const hasCredentials = (process.env.SOULSEEK_USER && process.env.SOULSEEK_PASS) || true; // Hardcoded fallback active
+        const useSoulseek = hasCredentials && playlistUrl;
 
         // Async call - do not await
         if (useSoulseek) {
