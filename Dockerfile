@@ -31,7 +31,8 @@ COPY frontend/ ./public
 RUN mkdir -p /tmp/downloads && chmod 777 /tmp/downloads
 
 ENV NODE_ENV=production \
-    PORT=3000
+    PORT=3000 \
+    PYTHONUNBUFFERED=1
 
 EXPOSE 3000
 
