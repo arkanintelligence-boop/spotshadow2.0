@@ -18,7 +18,7 @@ RUN spotdl --version
 WORKDIR /app
 
 # Install backend dependencies
-COPY backend/package*.json ./
+COPY package*.json ./
 RUN npm ci --only=production
 
 # Copy backend source
