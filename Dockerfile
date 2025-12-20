@@ -7,6 +7,13 @@ RUN apk add --no-cache python3 py3-pip ffmpeg aria2
 # Install yt-dlp
 RUN pip3 install yt-dlp --break-system-packages
 
+# Install sldl (Soulseek Downloader)
+RUN wget -L https://github.com/fiso64/slsk-batchdl/releases/latest/download/sldl_linux-x64.zip && \
+    unzip sldl_linux-x64.zip -d /tmp/sldl_extracted && \
+    mv /tmp/sldl_extracted/sldl /usr/local/bin/ || mv /tmp/sldl_extracted/*/sldl /usr/local/bin/ && \
+    chmod +x /usr/local/bin/sldl && \
+    rm -rf sldl_linux-x64.zip /tmp/sldl_extracted
+
 WORKDIR /app
 
 # Copy package files from backend
