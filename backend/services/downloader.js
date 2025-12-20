@@ -401,4 +401,4 @@ async function searchYouTubeScrape(term) {
     });
 }
 
-module.exports = { processDownloadQueue, getZipPath };
+module.exports = { processDownloadQueue, getZipPath, zipDirectory };

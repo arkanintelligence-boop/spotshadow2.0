@@ -21,9 +21,11 @@ router.post('/analyze', async (req, res) => {
     }
 });
 
+const soulseekService = require('../services/soulseek-downloader');
+
 router.post('/download', async (req, res) => {
     try {
-        const { tracks, playlistName } = req.body;
+        const { tracks, playlistName, playlistUrl } = req.body;
 
         if (!tracks || !Array.isArray(tracks) || tracks.length === 0) {
             return res.status(400).json({ error: 'Tracks list is empty or invalid' });
@@ -39,9 +41,42 @@ router.post('/download', async (req, res) => {
         // Start processing in background
         const io = req.app.get('socketio');
 
+        // Check for Soulseek credentials
+        const useSoulseek = process.env.SOULSEEK_USER && process.env.SOULSEEK_PASS && playlistUrl;
+
         // Async call - do not await
-        downloaderService.processDownloadQueue(jobId, tracks, playlistName, io)
-            .catch(err => console.error(`Job ${jobId} failed:`, err));
+        if (useSoulseek) {
+            console.log(`Starting Soulseek download for job ${jobId}`);
+
+            // Soulseek download
+            soulseekService.downloadPlaylistSoulseek(playlistUrl, io, jobId)
+                .then(async (results) => {
+                    // Zip results
+                    io.emit(`status:${jobId}`, { type: 'zipping' });
+
+                    const safeName = playlistName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+                    const jobDir = require('path').join(process.env.DOWNLOAD_DIR || '/tmp/downloads', jobId);
+                    const zipPath = require('path').join(process.env.DOWNLOAD_DIR || '/tmp/downloads', `${jobId}.zip`);
+
+                    try {
+                        await downloaderService.zipDirectory(jobDir, zipPath, safeName);
+                        require('fs').rmSync(jobDir, { recursive: true, force: true });
+                        io.emit(`status:${jobId}`, { type: 'ready', url: `/api/file/${jobId}` });
+                    } catch (zipErr) {
+                        console.error('Zip Error:', zipErr);
+                        io.emit(`status:${jobId}`, { type: 'error', message: 'Failed to create ZIP' });
+                    }
+                })
+                .catch(err => {
+                    console.error(`Soulseek Job ${jobId} failed:`, err);
+                    io.emit(`status:${jobId}`, { type: 'error', message: `Soulseek Error: ${err.message}` });
+                });
+
+        } else {
+            // Fallback to YouTube
+            downloaderService.processDownloadQueue(jobId, tracks, playlistName, io)
+                .catch(err => console.error(`Job ${jobId} failed:`, err));
+        }
 
         res.json({ jobId });
     } catch (error) {

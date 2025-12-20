@@ -96,7 +96,8 @@ async function startDownload() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 tracks: currentPlaylist.tracks,
-                playlistName: currentPlaylist.name
+                playlistName: currentPlaylist.name,
+                playlistUrl: elements.urlInput.value.trim()
             })
         });
 

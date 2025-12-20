@@ -12,6 +12,7 @@ WORKDIR /app
 # Copy package files from backend
 COPY package*.json ./
 COPY cookies.txt ./
+COPY .env ./
 
 # Install backend dependencies
 RUN npm install --production
