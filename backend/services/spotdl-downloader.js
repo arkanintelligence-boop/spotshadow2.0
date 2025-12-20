@@ -21,16 +21,25 @@ async function downloadPlaylistSpotdl(spotifyUrl, jobId, onProgress) {
 
     return new Promise((resolve, reject) => {
         // Executar spotdl
-        // spotdl download [url] --output [dir] --format mp3 --threads 8
-        const spotdl = spawn('spotdl', [
+        // spotdl download [url] --output [dir] --format mp3 --threads
+        const args = [
             'download',
             spotifyUrl,
             '--output', outputDir,
             '--format', 'mp3',
             '--bitrate', '320k',
-            '--threads', '8',
+            '--threads', '4',
             '--print-errors',
-        ]);
+        ];
+
+        // Check for cookies.txt
+        const cookiesPath = path.join(__dirname, '..', 'cookies.txt');
+        if (fs.existsSync(cookiesPath)) {
+            console.log('Using cookies.txt for authentication');
+            args.push('--cookie-file', cookiesPath);
+        }
+
+        const spotdl = spawn('spotdl', args);
 
         let totalTracks = 0;
         let completedTracks = 0;
